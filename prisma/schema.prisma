@@ -1,0 +1,68 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              Int         @id @default(autoincrement())
+  posts           Post[]      @relation("UserUpdatedPosts")
+  dashboards      Dashboard[]
+  createdComments Comment[]   @relation("UserCreatedComments")
+  updatedComments Comment[]   @relation("UserUpdatedComments")
+  Post            Post[]
+  Comment         Comment[]
+  Vote            Vote[]
+}
+
+model Post {
+  id            Int    @id @default(autoincrement())
+  createdBy     Int
+  updatedBy     Int?
+  author        User   @relation(fields: [createdBy], references: [id])
+  updatedByUser User?  @relation("UserUpdatedPosts", fields: [updatedBy], references: [id])
+  votes         Vote[]
+}
+
+model Dashboard {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  groups    Group[]
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Comment {
+  id            Int   @id @default(autoincrement())
+  createdBy     Int
+  updatedBy     Int?
+  user          User  @relation(fields: [createdBy], references: [id], map: "Comment_user_fkey")
+  createdByUser User  @relation("UserCreatedComments", fields: [createdBy], references: [id], map: "Comment_createdByUser_fkey")
+  updatedByUser User? @relation("UserUpdatedComments", fields: [updatedBy], references: [id], map: "Comment_updatedByUser_fkey")
+}
+
+model Group {
+  id          Int        @id @default(autoincrement())
+  name        String
+  filters     Filter[]
+  Dashboard   Dashboard? @relation(fields: [dashboardId], references: [id])
+  dashboardId Int?
+}
+
+model Filter {
+  id        Int      @id @default(autoincrement())
+  groupId   Int
+  group     Group    @relation(fields: [groupId], references: [id])
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Vote {
+  id     Int  @id @default(autoincrement())
+  postId Int
+  userId Int
+  post   Post @relation(fields: [postId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
+}
