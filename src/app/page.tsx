@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "../pages/home";
 import Dashboard from "../pages/dashboard"; // Example protected page
-import Login from "../pages/login";
 import { AuthProvider } from "../context/AuthContext";
 import PrivateRoute from "../components/PrivateRoute";
 
@@ -25,7 +24,6 @@ export default function App() {
     <AuthProvider isTesting={isTesting} isAdminTesting={isAdminTesting}>
       <Router>
         <Routes>
-          <Route path="/login" element={<Login />} />
           <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
           {/* Add more routes as needed */}

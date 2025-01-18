@@ -9,22 +9,54 @@ generator client {
 
 model User {
   id              Int         @id @default(autoincrement())
-  posts           Post[]      @relation("UserUpdatedPosts")
+  username        String      @unique
+  email           String      @unique
+  password        String
+  avatar          String?
+  posts           Post[]      @relation("UserCreatedPosts")
+  votes           Vote[]      @relation("UserVotes")
   dashboards      Dashboard[]
-  createdComments Comment[]   @relation("UserCreatedComments")
-  updatedComments Comment[]   @relation("UserUpdatedComments")
-  Post            Post[]
-  Comment         Comment[]
-  Vote            Vote[]
+  createdComments Comment[]   @relation("UserCreatedComments") // Relation for created comments
+  updatedComments Comment[]   @relation("UserUpdatedComments") // Relation for updated comments
+  comments        Comment[]   @relation("UserComments")        // Relation for comments
+  updatedPosts    Post[]      @relation("UserUpdatedPosts")    // Added reverse relation for updated posts
 }
 
 model Post {
-  id            Int    @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
+  title         String
+  description   String
+  categoryId    Int
+  statusId      Int
   createdBy     Int
   updatedBy     Int?
-  author        User   @relation(fields: [createdBy], references: [id])
-  updatedByUser User?  @relation("UserUpdatedPosts", fields: [updatedBy], references: [id])
-  votes         Vote[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+  author        User     @relation("UserCreatedPosts", fields: [createdBy], references: [id])
+  updatedByUser User?    @relation("UserUpdatedPosts", fields: [updatedBy], references: [id])
+  category      Category @relation(fields: [categoryId], references: [id])
+  status        Status   @relation(fields: [statusId], references: [id])
+  votes         Vote[]   @relation("PostVotes")
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String
+  posts     Post[]
+}
+
+model Status {
+  id        Int      @id @default(autoincrement())
+  name      String
+  posts     Post[]
+}
+
+model Vote {
+  id     Int  @id @default(autoincrement())
+  postId Int
+  userId Int
+  post   Post @relation("PostVotes", fields: [postId], references: [id])
+  user   User @relation("UserVotes", fields: [userId], references: [id])
 }
 
 model Dashboard {
@@ -39,7 +71,7 @@ model Comment {
   id            Int   @id @default(autoincrement())
   createdBy     Int
   updatedBy     Int?
-  user          User  @relation(fields: [createdBy], references: [id], map: "Comment_user_fkey")
+  user          User  @relation("UserComments", fields: [createdBy], references: [id], map: "Comment_user_fkey")
   createdByUser User  @relation("UserCreatedComments", fields: [createdBy], references: [id], map: "Comment_createdByUser_fkey")
   updatedByUser User? @relation("UserUpdatedComments", fields: [updatedBy], references: [id], map: "Comment_updatedByUser_fkey")
 }
@@ -57,12 +89,4 @@ model Filter {
   groupId   Int
   group     Group    @relation(fields: [groupId], references: [id])
   updatedAt DateTime @default(now()) @updatedAt
-}
-
-model Vote {
-  id     Int  @id @default(autoincrement())
-  postId Int
-  userId Int
-  post   Post @relation(fields: [postId], references: [id])
-  user   User @relation(fields: [userId], references: [id])
 }

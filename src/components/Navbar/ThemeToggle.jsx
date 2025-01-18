@@ -5,7 +5,6 @@ import { FaMoon, FaSun } from "react-icons/fa"; // Import icons from react-icons
 const ThemeToggle = () => {
   const [theme, setTheme] = useState("light"); // Default theme set to "light"
   const [rotated, setRotated] = useState(false); // State for rotation
-  const element = document.documentElement;
 
   useEffect(() => {
     // Check the system's preferred theme and apply it on the initial load
@@ -16,6 +15,7 @@ const ThemeToggle = () => {
   }, []);
 
   useEffect(() => {
+    const element = document.documentElement;
     if (theme === "dark") {
       element.classList.add("dark");
     } else {

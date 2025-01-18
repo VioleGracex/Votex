@@ -42,7 +42,7 @@ const featureItemClass =
     const toggleLoginModal = () => setShowPopup("login"); // Open login modal
   
     return (
-      <div className="container mx-auto flex justify-between items-center px-4">
+      <div className="container mx-auto flex justify-between items-center px-4 z-10">
         <div className="relative mx-auto px-16 md:px-64 py-28  flex flex-col md:flex-row justify-center items-center gap-20 overflow-hidden">
           {/* Left Section */}
           <div data-aos="fade-up" className="w-full md:w-[380px] flex-col justify-start items-start gap-8 flex">
