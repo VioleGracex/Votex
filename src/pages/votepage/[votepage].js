@@ -2,34 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-const VotePage = () => {
+const VotePage = ({ votePageData }) => {
   const router = useRouter();
   const { votePageId } = router.query; // Get the dynamic route parameter
-  const [votePage, setVotePage] = useState(null);
-  const [posts, setPosts] = useState([]);
+  const [votePage, setVotePage] = useState(votePageData);
+  const [posts, setPosts] = useState(votePageData.posts);
   const [newPostContent, setNewPostContent] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!votePageId) return; // Wait for the dynamic route parameter to be available
-
-    const fetchVotePage = async () => {
-      try {
-        const response = await axios.get(`${apiUrl}/votepages/${votePageId}`);
-        setVotePage(response.data);
-        setPosts(response.data.posts);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching vote page:', error);
-        alert('Error fetching vote page. Please try again.');
-        setLoading(false);
-      }
-    };
-
-    fetchVotePage();
-  }, [votePageId]);
+  const [loading, setLoading] = useState(false);
 
   const handleAddPost = async () => {
     try {
@@ -95,5 +76,24 @@ const VotePage = () => {
     </div>
   );
 };
+
+export async function getServerSideProps(context) {
+  const { votePageId } = context.params;
+  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+  try {
+    const response = await axios.get(`${apiUrl}/votepages/${votePageId}`);
+    return {
+      props: {
+        votePageData: response.data,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching vote page:', error);
+    return {
+      notFound: true,
+    };
+  }
+}
 
 export default VotePage;

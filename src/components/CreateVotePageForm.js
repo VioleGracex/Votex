@@ -17,7 +17,7 @@ const CreateVotePageForm = ({ onClose, onCreate }) => {
     }
     try {
       const response = await axios.post(
-        `${apiUrl}/votepages/${storedUserId}`,
+        `${apiUrl}/api/votepages/${storedUserId}`,
         { votePageId: name.toLowerCase().replace(/\s+/g, '-'), name },
         { headers: { Authorization: `Bearer ${token}` } }
       );

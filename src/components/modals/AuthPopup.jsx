@@ -34,7 +34,7 @@ const AuthPopup = ({ type, onClose }) => {
     console.log(apiUrl); // Проверьте, выводит ли это правильный URL
 
     try {
-      const response = await fetch(`${apiUrl}/register`, {
+      const response = await fetch(`${apiUrl}/api/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password })
@@ -62,7 +62,7 @@ const AuthPopup = ({ type, onClose }) => {
   const login = async () => {
     console.log('Вход с', { email, password });
     try {
-      const response = await fetch(`${apiUrl}/login`, {
+      const response = await fetch(`${apiUrl}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

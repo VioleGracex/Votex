@@ -20,7 +20,7 @@ const Dashboard = () => {
 
     if (!storedToken) {
       alert("Please log in first.");
-      window.location.href = "/login";
+      window.location.href = "/api/login";
       return;
     }
 

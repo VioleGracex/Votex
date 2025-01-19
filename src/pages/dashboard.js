@@ -40,7 +40,7 @@ const Dashboard = () => {
       try {
         setLoading(true);
         console.log(userId);
-        const votePagesResponse = await axios.get(`${apiUrl}/votepages/${userId}`);
+        const votePagesResponse = await axios.get(`${apiUrl}/api/votepages/${userId}`);
         setVotePages(votePagesResponse.data);
         setLoading(false);
       } catch (error) {

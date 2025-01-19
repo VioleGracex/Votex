@@ -3,7 +3,11 @@ import React, { useState, useEffect } from "react";
 import Features from './HomeSections/Features'
 import AOS from "aos";
 import "aos/dist/aos.css";
-import AuthForm from "../pages/AuthForm";
+import AuthForm from "./AuthForm";
+import NavBar from "../components/Navbar/Navbar"
+import '../styles/globals.css'; // Import global styles
+
+
 const Home = () => {
   const [isPlay, setIsPlay] = useState(false);
 
@@ -22,6 +26,7 @@ const Home = () => {
   }, []);
   return (
     <div>
+      <NavBar />
       <section id="Features">
         <Features togglePlay={togglePlay} />
       </section>
