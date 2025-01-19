@@ -8,85 +8,82 @@ generator client {
 }
 
 model User {
-  id              Int         @id @default(autoincrement())
-  username        String      @unique
-  email           String      @unique
+  id              Int        @id @default(autoincrement())
+  userId          String     @unique
+  username        String     @unique
+  email           String     @unique
   password        String
   avatar          String?
-  posts           Post[]      @relation("UserCreatedPosts")
-  votes           Vote[]      @relation("UserVotes")
-  dashboards      Dashboard[]
-  createdComments Comment[]   @relation("UserCreatedComments") // Relation for created comments
-  updatedComments Comment[]   @relation("UserUpdatedComments") // Relation for updated comments
-  comments        Comment[]   @relation("UserComments")        // Relation for comments
-  updatedPosts    Post[]      @relation("UserUpdatedPosts")    // Added reverse relation for updated posts
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @default(now()) @updatedAt
+  posts           Post[]     @relation("UserCreatedPosts")
+  updatedPosts    Post[]     @relation("UserUpdatedPosts")
+  comments        Comment[]  @relation("UserComments")
+  createdComments Comment[]  @relation("UserCreatedComments")
+  updatedComments Comment[]  @relation("UserUpdatedComments")
+  votes           Vote[]     @relation("UserVotes")
+  votePages       VotePage[] @relation("VotePageUsers") // Named relation
 }
 
 model Post {
-  id            Int      @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
+  postId        String    @unique
   title         String
   description   String
   categoryId    Int
   statusId      Int
   createdBy     Int
   updatedBy     Int?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
-  author        User     @relation("UserCreatedPosts", fields: [createdBy], references: [id])
-  updatedByUser User?    @relation("UserUpdatedPosts", fields: [updatedBy], references: [id])
-  category      Category @relation(fields: [categoryId], references: [id])
-  status        Status   @relation(fields: [statusId], references: [id])
-  votes         Vote[]   @relation("PostVotes")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  creator       User      @relation("UserCreatedPosts", fields: [createdBy], references: [id])
+  updatedByUser User?     @relation("UserUpdatedPosts", fields: [updatedBy], references: [id])
+  category      Category  @relation(fields: [categoryId], references: [id])
+  status        Status    @relation(fields: [statusId], references: [id])
+  votes         Vote[]    @relation("PostVotes")
+  VotePage      VotePage? @relation(fields: [votePageId], references: [id])
+  votePageId    Int?
 }
 
 model Category {
-  id        Int      @id @default(autoincrement())
-  name      String
-  posts     Post[]
+  id    Int    @id @default(autoincrement())
+  name  String
+  posts Post[]
 }
 
 model Status {
-  id        Int      @id @default(autoincrement())
-  name      String
-  posts     Post[]
+  id    Int    @id @default(autoincrement())
+  name  String
+  posts Post[]
 }
 
 model Vote {
-  id     Int  @id @default(autoincrement())
-  postId Int
-  userId Int
-  post   Post @relation("PostVotes", fields: [postId], references: [id])
-  user   User @relation("UserVotes", fields: [userId], references: [id])
-}
-
-model Dashboard {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  groups    Group[]
-  updatedAt DateTime @default(now()) @updatedAt
+  id         Int       @id @default(autoincrement())
+  postId     Int
+  userId     Int
+  post       Post      @relation("PostVotes", fields: [postId], references: [id])
+  user       User      @relation("UserVotes", fields: [userId], references: [id])
+  VotePage   VotePage? @relation(fields: [votePageId], references: [id])
+  votePageId Int?
 }
 
 model Comment {
-  id            Int   @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
+  commentId     String   @unique
   createdBy     Int
   updatedBy     Int?
-  user          User  @relation("UserComments", fields: [createdBy], references: [id], map: "Comment_user_fkey")
-  createdByUser User  @relation("UserCreatedComments", fields: [createdBy], references: [id], map: "Comment_createdByUser_fkey")
-  updatedByUser User? @relation("UserUpdatedComments", fields: [updatedBy], references: [id], map: "Comment_updatedByUser_fkey")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+  createdByUser User     @relation("UserCreatedComments", fields: [createdBy], references: [id], map: "Comment_createdByUser_fkey")
+  updatedByUser User?    @relation("UserUpdatedComments", fields: [updatedBy], references: [id], map: "Comment_updatedByUser_fkey")
+  user          User?    @relation("UserComments", fields: [createdBy], references: [id], map: "Comment_user_fkey")
 }
 
-model Group {
-  id          Int        @id @default(autoincrement())
-  name        String
-  filters     Filter[]
-  Dashboard   Dashboard? @relation(fields: [dashboardId], references: [id])
-  dashboardId Int?
-}
-
-model Filter {
-  id        Int      @id @default(autoincrement())
-  groupId   Int
-  group     Group    @relation(fields: [groupId], references: [id])
-  updatedAt DateTime @default(now()) @updatedAt
+model VotePage {
+  id         Int    @id @default(autoincrement())
+  votePageId String @unique
+  name       String
+  users      User[] @relation("VotePageUsers") // Implicit many-to-many relation
+  posts      Post[]
+  votes      Vote[]
 }

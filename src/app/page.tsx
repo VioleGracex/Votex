@@ -2,33 +2,47 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "../pages/home";
-import Dashboard from "../pages/dashboard"; // Example protected page
-import { AuthProvider } from "../context/AuthContext";
-import PrivateRoute from "../components/PrivateRoute";
+import Dashboard from "../pages/Dashboard";
+import VotePage from "../pages/VotePage"; // Import the new VotePage component
 
 export default function App() {
   const [isClient, setIsClient] = useState(false);
-  const isTesting = true; // Set this to true for testing
-  const isAdminTesting = false; // Set this to true for admin auto login
+  const [username, setUsername] = useState<string | null>(null); // State to store the username
 
   useEffect(() => {
     // This ensures that the Router runs only on the client side
     setIsClient(true);
+
+    // Fetch the username from local storage
+    const storedUsername = localStorage.getItem('username');
+    if (storedUsername) {
+      setUsername(storedUsername);
+    }
   }, []);
 
-  if (!isClient) {
+  useEffect(() => {
+    // Listen for storage changes to handle logout from other tabs
+    const handleStorageChange = () => {
+      const storedUsername = localStorage.getItem('username');
+      setUsername(storedUsername);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  if (!isClient || !username) {
     return null; // or a loading spinner
   }
 
   return (
-    <AuthProvider isTesting={isTesting} isAdminTesting={isAdminTesting}>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
-          {/* Add more routes as needed */}
-        </Routes>
-      </Router>
-    </AuthProvider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/votepage/:votePageId" element={<VotePage />} /> {/* Add the dynamic route */}
+      </Routes>
+    </Router>
   );
 }

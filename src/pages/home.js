@@ -24,9 +24,6 @@ const Home = () => {
     <div>
       <section id="Features">
         <Features togglePlay={togglePlay} />
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <AuthForm />
-        </div>
       </section>
     </div>
   )
