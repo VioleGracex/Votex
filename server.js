@@ -13,31 +13,15 @@ const server = express();
 server.use(cors());
 server.use(bodyParser.json());
 
-// Helper function to encode userId
-// Вспомогательная функция для кодирования userId
+// Helper function to encode userId IMPORTANT(Critical) do not change
 const encodeUserId = (username) => {
   return crypto.createHash('sha256').update(username).digest('hex');
 };
 
-// Middleware to authenticate JWT token
-// Промежуточное ПО для аутентификации JWT токена
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Token missing' }); // Токен отсутствует
-
-  jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Token invalid or expired' }); // Токен недействителен или истек
-    req.user = user;
-    next();
-  });
-};
-
 // Register Endpoint
-// Конечная точка регистрации
 server.post('/api/register', async (req, res) => {
   const { username, email, password } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10); // Хеширование пароля
+  const hashedPassword = await bcrypt.hash(password, 10); // Hashing the password
   const encodedUserId = encodeUserId(username);
 
   try {
@@ -50,11 +34,11 @@ server.post('/api/register', async (req, res) => {
     });
 
     if (existingUser) {
-      return res.status(400).json({ error: 'Username already exists' }); // Имя пользователя уже существует
+      return res.status(400).json({ error: 'Username already exists' });
     }
 
     if (existingEmail) {
-      return res.status(400).json({ error: 'Email already exists' }); // Электронная почта уже существует
+      return res.status(400).json({ error: 'Email already exists' });
     }
 
     const user = await prisma.user.create({
@@ -72,47 +56,44 @@ server.post('/api/register', async (req, res) => {
       data: {
         votePageId: uniqueVotePageId,
         name: 'Tutorial',
+        userId: encodedUserId,
         users: {
-          connect: { id: user.id },
+          create: {
+            userId: encodedUserId,
+          },
         },
       },
     });
 
     res.status(201).json({ user, votePage });
   } catch (error) {
-    console.error('Error creating user or vote page:', error); // Ошибка при создании пользователя или страницы голосования
-    res.status(400).json({ error: 'Failed to create user or default resources' }); // Не удалось создать пользователя или ресурсы по умолчанию
+    console.error('Error creating user or vote page:', error);
+    res.status(400).json({ error: 'Failed to create user or default resources' });
   }
 });
 
 // Login Endpoint
-// Конечная точка входа
 server.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   const user = await prisma.user.findUnique({
     where: { email },
   });
   if (user && (await bcrypt.compare(password, user.password))) {
-    const token = jwt.sign({ userId: user.userId }, SECRET_KEY, { expiresIn: '1h' }); // Создание токена
+    const token = jwt.sign({ userId: user.userId }, SECRET_KEY, { expiresIn: '1h' });
     res.json({ token, user });
   } else {
-    res.status(401).json({ error: 'Invalid email or password' }); // Неправильный email или пароль
+    res.status(401).json({ error: 'Invalid email or password' });
   }
 });
 
-// Endpoint to get vote pages for a specific user
-// Конечная точка для получения страниц голосования для конкретного пользователя
+// Endpoint to get vote pages for a specific user IMPORTANT(Critical) do not change
 server.get('/api/votepages/:userId', async (req, res) => {
   const { userId } = req.params;
 
   try {
     const votePages = await prisma.votePage.findMany({
       where: {
-        users: {
-          some: {
-            userId: userId,
-          },
-        },
+        userId: userId,
       },
       include: {
         users: true,
@@ -129,13 +110,12 @@ server.get('/api/votepages/:userId', async (req, res) => {
 
     res.json(votePagesWithCounts);
   } catch (error) {
-    console.error('Error fetching vote pages:', error); // Ошибка при получении страниц голосования
-    res.status(500).json({ error: 'Failed to fetch vote pages' }); // Не удалось получить страницы голосования
+    console.error('Error fetching vote pages:', error);
+    res.status(500).json({ error: 'Failed to fetch vote pages' });
   }
 });
 
 // Endpoint to add a vote page to a specific user
-// Конечная точка для добавления страницы голосования к конкретному пользователю
 server.post('/api/votepages/:userId', async (req, res) => {
   const { userId } = req.params;
   const { votePageId, name } = req.body;
@@ -146,7 +126,7 @@ server.post('/api/votepages/:userId', async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' }); // Пользователь не найден
+      return res.status(404).json({ error: 'User not found' });
     }
 
     const uniqueVotePageId = `${userId}-${votePageId}`;
@@ -155,99 +135,155 @@ server.post('/api/votepages/:userId', async (req, res) => {
       data: {
         votePageId: uniqueVotePageId,
         name,
+        userId: userId,
         users: {
-          connect: { id: user.id },
+          create: {
+            userId: userId,
+          },
         },
       },
     });
 
     res.status(201).json(votePage);
   } catch (error) {
-    console.error('Error creating vote page:', error); // Ошибка при создании страницы голосования
-    res.status(400).json({ error: 'Failed to create vote page' }); // Не удалось создать страницу голосования
+    console.error('Error creating vote page:', error);
+    res.status(400).json({ error: 'Failed to create vote page' });
   }
 });
 
-// Get specific vote page by ID
-// Получить конкретную страницу голосования по ID
-server.get('/api/votepages/:votePageId', async (req, res) => {
+// Endpoint to get users, posts, and votes for a specific vote page
+server.get('/api/votepages/:votePageId/details', async (req, res) => {
   const { votePageId } = req.params;
+
   try {
     const votePage = await prisma.votePage.findUnique({
-      where: { votePageId },
+      where: {
+        votePageId: votePageId,
+      },
       include: {
         users: true,
         posts: {
           include: {
             votes: true,
-            creator: true,
-            updatedByUser: true,
-            category: true,
-            status: true,
           },
         },
-        votes: {
-          include: {
-            user: true,
-            post: true,
-          },
-        },
+        votes: true,
       },
     });
+
     if (!votePage) {
-      return res.status(404).json({ error: 'Vote page not found' }); // Страница голосования не найдена
+      return res.status(404).json({ error: 'Vote page not found' });
     }
-    res.json(votePage);
+
+    const votePageDetails = {
+      ...votePage,
+      postsCount: votePage.posts.length,
+      votesCount: votePage.votes.length,
+    };
+
+    res.json(votePageDetails);
   } catch (error) {
-    console.error('Error fetching vote page:', error); // Ошибка при получении страницы голосования
-    res.status(500).json({ error: 'Failed to fetch vote page' }); // Не удалось получить страницу голосования
+    console.error('Error fetching vote page details:', error);
+    res.status(500).json({ error: 'Failed to fetch vote page details' });
   }
 });
 
 // Get posts for a specific vote page
-// Получить сообщения для конкретной страницы голосования
 server.get('/api/votepages/:votePageId/posts', async (req, res) => {
   const { votePageId } = req.params;
 
   try {
-    // Fetch the vote page first
-    // Сначала получить страницу голосования
     const votePage = await prisma.votePage.findUnique({
       where: { votePageId: votePageId },
       include: {
         posts: {
           include: {
             votes: true,
-            creator: true,
-            updatedByUser: true,
-            category: true,
-            status: true,
           },
         },
       },
     });
 
-    // Check if the vote page exists
-    // Проверить, существует ли страница голосования
     if (!votePage) {
-      return res.status(404).json({ error: 'Vote page not found' }); // Страница голосования не найдена
+      return res.status(404).json({ error: 'Vote page not found' });
     }
 
-    // Extract posts from the vote page
-    // Извлечь сообщения со страницы голосования
     const posts = votePage.posts;
 
-    // Send the posts back in the response
-    // Отправить сообщения обратно в ответе
     res.json(posts);
   } catch (error) {
-    console.error('Error fetching posts:', error); // Ошибка при получении сообщений
-    res.status(500).json({ error: 'Failed to fetch posts' }); // Не удалось получить сообщения
+    console.error('Error fetching posts:', error);
+    res.status(500).json({ error: 'Failed to fetch posts' });
+  }
+});
+
+// Create a new post
+server.post('/api/posts/add', async (req, res) => {
+  const { title, description, status, createdBy, votePageId, category } = req.body;
+
+  try {
+    const post = await prisma.post.create({
+      data: {
+        postId: crypto.randomBytes(16).toString('hex'),
+        title,
+        description,
+        status,
+        createdBy,
+        votePageId,
+        category,
+      },
+    });
+
+    res.status(201).json(post);
+  } catch (error) {
+    console.error('Error creating post:', error);
+    res.status(400).json({ error: 'Failed to create post' });
+  }
+});
+
+// Create a new vote
+server.post('/api/votes', async (req, res) => {
+  const { postId, userId, votePageId, voteType } = req.body;
+
+  try {
+    const vote = await prisma.vote.create({
+      data: {
+        postId,
+        userId,
+        votePageId,
+        voteType,
+      },
+    });
+
+    res.status(201).json(vote);
+  } catch (error) {
+    console.error('Error creating vote:', error);
+    res.status(400).json({ error: 'Failed to create vote' });
+  }
+});
+
+// Create a new comment
+server.post('/api/comments', async (req, res) => {
+  const { createdBy, content } = req.body;
+  const commentId = crypto.randomBytes(16).toString('hex');
+
+  try {
+    const comment = await prisma.comment.create({
+      data: {
+        commentId,
+        createdBy,
+        content,
+      },
+    });
+
+    res.status(201).json(comment);
+  } catch (error) {
+    console.error('Error creating comment:', error);
+    res.status(400).json({ error: 'Failed to create comment' });
   }
 });
 
 // Get user details
-// Получить данные пользователя
 server.get('/api/users/:userId', async (req, res) => {
   const { userId } = req.params;
   try {
@@ -256,33 +292,49 @@ server.get('/api/users/:userId', async (req, res) => {
     });
     res.json(user);
   } catch (error) {
-    res.status(404).json({ error: 'User not found' }); // Пользователь не найден
+    res.status(404).json({ error: 'User not found' });
   }
 });
 
-// Get all users
-// Получить всех пользователей
-server.get('/api/users', async (req, res) => {
-  const users = await prisma.user.findMany();
-  res.json(users);
+// Endpoint to check if a user exists
+server.get('/api/check-user', async (req, res) => {
+  const userId = req.headers['user-id']; // Extract userId from headers
+
+  if (!userId) {
+    return res.status(400).json({ exists: false, error: 'User ID is required' });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ exists: false });
+    }
+
+    res.json({ exists: true });
+  } catch (error) {
+    console.error('Error checking user in database:', error);
+    res.status(500).json({ exists: false });
+  }
 });
 
 // Root Endpoint to Check Database and Prisma Connection
-// Корневая конечная точка для проверки подключения к базе данных и Prisma
 server.get('/api', async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    res.send('Database is connected and Prisma is working!'); // База данных подключена, и Prisma работает!
+    res.send('Database is connected and Prisma is working!');
   } catch (error) {
-    res.status(500).send('Failed to connect to the database or Prisma.'); // Не удалось подключиться к базе данных или Prisma.
+    res.status(500).send('Failed to connect to the database or Prisma.');
   }
 });
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, (err) => {
   if (err) {
-    console.error('Error starting server:', err); // Ошибка при запуске сервера
+    console.error('Error starting server:', err);
     process.exit(1);
   }
-  console.log(`Server running on port ${PORT}`); // Сервер работает на порту ${PORT}
+  console.log(`Server running on port ${PORT}`);
 });

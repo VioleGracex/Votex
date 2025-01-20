@@ -5,6 +5,7 @@ import { FaChevronDown, FaChevronUp, FaBars, FaTimes, FaUser, FaTachometerAlt } 
 import Image from "next/image";
 import AuthPopup from "../modals/AuthPopup";
 import ProfileDropDown from './ProfileDropDown';
+import { checkIfLoggedIn, handleLogout } from '../../utils/authHelpers'; // Import the helper functions
 
 const Navbar = () => {
   const [isAccordionOpen, setIsAccordionOpen] = useState(false);
@@ -21,21 +22,13 @@ const Navbar = () => {
   const toggleRegisterModal = () => setShowPopup("register"); // Установить тип всплывающего окна на 'register'
 
   useEffect(() => {
-    // Проверка, вошел ли пользователь, путем проверки токена в localStorage
-    const token = localStorage.getItem("token");
-    if (token) {
-      setIsLoggedIn(true);
-    } else {
-      setIsLoggedIn(false);
-    }
+    // Проверка, вошел ли пользователь
+    const checkLoginStatus = async () => {
+      const loggedIn = await checkIfLoggedIn();
+      setIsLoggedIn(loggedIn);
+    };
+    checkLoginStatus();
   }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsLoggedIn(false);
-    setIsProfileMenuOpen(false);
-    /* перенаправить на главную страницу "/" */
-  };
 
   const navLinks = [
     { path: "/", label: "Главная" },
@@ -143,7 +136,11 @@ const Navbar = () => {
               </a>
 
               {/* Выпадающее меню профиля */}
-              <ProfileDropDown handleLogout={handleLogout} />
+              <ProfileDropDown handleLogout={() => {
+                handleLogout();
+                setIsLoggedIn(false);
+                setIsProfileMenuOpen(false);
+              }} />
             </>
           ) : (
             <>

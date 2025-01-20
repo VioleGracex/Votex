@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { FiMoreVertical } from 'react-icons/fi';
-import { FaUser, FaFileAlt, FaVoteYea } from 'react-icons/fa';
+import { FaUser, FaFileAlt, FaVoteYea, FaEdit, FaTrash } from 'react-icons/fa';
 
 const VotePageCard = ({ votePage, onEdit, onDelete }) => {
   const router = useRouter();
@@ -46,50 +46,56 @@ const VotePageCard = ({ votePage, onEdit, onDelete }) => {
 
   return (
     <div
-      className="relative p-4 border border-gray-300 rounded-lg hover:scale-105 transform transition duration-300 ease-in-out cursor-pointer z-10"
+      className="relative p-4 sm:p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg hover:shadow-xl transform transition duration-300 ease-in-out cursor-pointer z-10 hover:scale-105"
       onClick={handleClick}
     >
-      <h3 className="text-lg mb-2 text-blue-600">{votePage.name}</h3>
-      <div className="absolute top-2 right-2 z-20" ref={menuRef}>
+      <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-4 text-blue-500 dark:text-gray-200 hover:underline truncate">{votePage.name}</h3>
+      <div className="absolute top-4 right-4 z-20" ref={menuRef}>
         <button
-          className="block text-black dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded-full transform hover:scale-110 transition"
+          className="block text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-2 rounded-full transition"
           onClick={toggleMenu}
           aria-label="Toggle menu"
         >
-          <FiMoreVertical />
+          <FiMoreVertical size={20} />
         </button>
         {menuVisible && (
-          <div className="absolute right-0 mt-2 bg-white border border-gray-300 rounded shadow-lg z-30">
+          <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-30">
             <button 
               onClick={handleEdit} 
-              className="block px-4 py-2 text-left w-full hover:bg-gray-100"
+              className="flex items-center px-4 py-2 sm:px-6 sm:py-3 text-left w-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
             >
-              Edit
+              <FaEdit className="mr-2" /> Редактировать
             </button>
             <button 
               onClick={handleDelete} 
-              className="block px-4 py-2 text-left w-full hover:bg-gray-100"
+              className="flex items-center px-4 py-2 sm:px-6 sm:py-3 text-left w-full hover:bg-gray-100 dark:hover:bg-gray-700 text-red-700 dark:text-gray-300"
             >
-              Delete
+              <FaTrash className="mr-2" /> Удалить
             </button>
           </div>
         )}
       </div>
-      <div className="absolute bottom-2 right-2 flex space-x-4 text-xs text-gray-600 z-10">
-        <div className="flex items-center space-x-1 group relative">
-          <FaUser />
-          <p>{votePage.users?.length || 0}</p>
-          <span className="absolute bottom-full mb-1 bg-gray-700 text-white text-xs rounded-lg p-1 hidden group-hover:block">Users</span>
+      <div className="flex justify-between items-center mt-4 sm:mt-6 text-gray-600 dark:text-gray-400 z-10">
+        <div className="flex items-center space-x-2 group relative">
+          <FaUser size={18} />
+          <p className="truncate">{votePage.users?.length || 0}</p>
+          <span className="absolute bottom-full mb-2 bg-gray-700 text-white text-xs rounded-lg p-1 hidden group-hover:block">
+            Пользователи
+          </span>
         </div>
-        <div className="flex items-center space-x-1 group relative">
-          <FaFileAlt />
-          <p>{votePage.postsCount || 0}</p>
-          <span className="absolute bottom-full mb-1 bg-gray-700 text-white text-xs rounded-lg p-1 hidden group-hover:block">Posts</span>
+        <div className="flex items-center space-x-2 group relative">
+          <FaFileAlt size={18} />
+          <p className="truncate">{votePage.postsCount || 0}</p>
+          <span className="absolute bottom-full mb-2 bg-gray-700 text-white text-xs rounded-lg p-1 hidden group-hover:block">
+            Сообщения
+          </span>
         </div>
-        <div className="flex items-center space-x-1 group relative">
-          <FaVoteYea />
-          <p>{votePage.votesCount || 0}</p>
-          <span className="absolute bottom-full mb-1 bg-gray-700 text-white text-xs rounded-lg p-1 hidden group-hover:block">Votes</span>
+        <div className="flex items-center space-x-2 group relative">
+          <FaVoteYea size={18} />
+          <p className="truncate">{votePage.votesCount || 0}</p>
+          <span className="absolute bottom-full mb-2 bg-gray-700 text-white text-xs rounded-lg p-1 hidden group-hover:block">
+            Голоса
+          </span>
         </div>
       </div>
     </div>
