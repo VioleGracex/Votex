@@ -4,34 +4,27 @@ const prisma = new PrismaClient();
 
 const router = express.Router();
 
-// Endpoint to get vote pages for a specific user IMPORTANT(Critical) do not change
+// Endpoint to fetch vote pages that a user has access to
 router.get('/api/votepages/:userId', async (req, res) => {
   const { userId } = req.params;
 
   try {
     const votePages = await prisma.votePage.findMany({
       where: {
-        userId: userId,
-      },
-      include: {
-        author: true, // Include the user who created the vote page
-        posts: true,
-        votes: true,
-      },
+        OR: [
+          { createdBy: userId }, // Vote pages created by the user
+          { users: { has: userId } } // Vote pages where the user is in the users array
+        ]
+      }
     });
 
-    const votePagesWithCounts = votePages.map((votePage) => ({
-      ...votePage,
-      postsCount: votePage.posts.length,
-      votesCount: votePage.votes.length,
-    }));
-
-    res.json(votePagesWithCounts);
+    res.json(votePages);
   } catch (error) {
     console.error('Error fetching vote pages:', error);
     res.status(500).json({ error: 'Failed to fetch vote pages' });
   }
 });
+
 
 // Endpoint to get users, posts, and votes for a specific vote page
 router.get('/api/votepages/:votePageId/details', async (req, res) => {
