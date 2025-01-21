@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { FaChevronDown, FaChevronUp, FaBars, FaTimes, FaUser, FaTachometerAlt } from "react-icons/fa";
 import Image from "next/image";
 import AuthPopup from "../modals/AuthPopup";
-import ProfileDropDown from './ProfileDropDown';
+import ProfileDropDown from './profileDropDown';
 import { checkIfLoggedIn, handleLogout } from '../../utils/authHelpers'; // Import the helper functions
 
 const Navbar = () => {

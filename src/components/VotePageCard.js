@@ -12,7 +12,7 @@ const VotePageCard = ({ votePage, onEdit, onDelete, onLeave, zIndex }) => {
   // Check if the current user is the owner of the vote page
   useEffect(() => {
     const userId = localStorage.getItem("userId");
-    setIsOwner(votePage.userId === userId);
+    setIsOwner(votePage.createdBy === userId);
   }, [votePage.ownerId]);
 
   const handleClick = () => {
@@ -74,19 +74,21 @@ const VotePageCard = ({ votePage, onEdit, onDelete, onLeave, zIndex }) => {
         </button>
         {menuVisible && (
           <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
-            <button 
-              onClick={handleEdit} 
-              className="flex items-center px-4 py-2 sm:px-6 sm:py-3 text-left w-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-            >
-              <FaEdit className="mr-2" /> Редактировать
-            </button>
             {isOwner ? (
-              <button 
-                onClick={handleDelete} 
-                className="flex items-center px-4 py-2 sm:px-6 sm:py-3 text-left w-full hover:bg-gray-100 dark:hover:bg-gray-700 text-red-700 dark:text-gray-300"
-              >
-                <FaTrash className="mr-2" /> Удалить
-              </button>
+              <>
+                <button 
+                  onClick={handleEdit} 
+                  className="flex items-center px-4 py-2 sm:px-6 sm:py-3 text-left w-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                >
+                  <FaEdit className="mr-2" /> Редактировать
+                </button>
+                <button 
+                  onClick={handleDelete} 
+                  className="flex items-center px-4 py-2 sm:px-6 sm:py-3 text-left w-full hover:bg-gray-100 dark:hover:bg-gray-700 text-red-700 dark:text-gray-300"
+                >
+                  <FaTrash className="mr-2" /> Удалить
+                </button>
+              </>
             ) : (
               <button 
                 onClick={handleLeave} 

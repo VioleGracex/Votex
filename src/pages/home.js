@@ -3,10 +3,9 @@ import React, { useState, useEffect } from "react";
 import Features from './HomeSections/Features'
 import AOS from "aos";
 import "aos/dist/aos.css";
-import AuthForm from "./AuthForm";
+import AuthForm from "./authForm";
 import NavBar from "../components/Navbar/Navbar"
-import '../styles/globals.css'; // Import global styles
-
+import "../app/globals.css";
 
 const Home = () => {
   const [isPlay, setIsPlay] = useState(false);

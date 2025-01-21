@@ -3,7 +3,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const router = express.Router();
 
-// Delete a post
+// Удалить пост
 router.delete('/api/posts/:postId/delete', async (req, res) => {
   const { postId } = req.params;
 
@@ -13,53 +13,53 @@ router.delete('/api/posts/:postId/delete', async (req, res) => {
     });
 
     if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
+      return res.status(404).json({ error: 'Пост не найден' });
     }
 
     await prisma.post.delete({
       where: { postId },
     });
 
-    res.status(200).json({ message: 'Post deleted successfully' });
+    res.status(200).json({ message: 'Пост успешно удален' });
   } catch (error) {
-    console.error('Error deleting post:', error);
-    res.status(400).json({ error: 'Failed to delete post' });
+    console.error('Ошибка при удалении поста:', error);
+    res.status(400).json({ error: 'Не удалось удалить пост' });
   }
 });
 
-// Delete a vote page
+// Удалить страницу голосования
 router.delete('/api/votepages/:userId/:votePageId/delete', async (req, res) => {
   const { userId, votePageId } = req.params;
 
   try {
-    // Find the vote page by votePageId
+    // Найти страницу голосования по votePageId
     const votePage = await prisma.votePage.findUnique({
       where: { votePageId },
     });
 
-    // Check if the vote page exists
+    // Проверить, существует ли страница голосования
     if (!votePage) {
-      return res.status(404).json({ error: 'Vote page not found' });
+      return res.status(404).json({ error: 'Страница голосования не найдена' });
     }
 
-    // Check if the userId matches the creator's userId
+    // Проверить, совпадает ли userId с userId создателя
     if (votePage.userId !== userId) {
-      return res.status(403).json({ error: 'You do not have permission to delete this vote page' });
+      return res.status(403).json({ error: 'У вас нет прав для удаления этой страницы голосования' });
     }
 
-    // Delete the vote page
+    // Удалить страницу голосования
     await prisma.votePage.delete({
       where: { votePageId },
     });
 
-    res.status(200).json({ message: 'Vote page deleted successfully' });
+    res.status(200).json({ message: 'Страница голосования успешно удалена' });
   } catch (error) {
-    console.error('Error deleting vote page:', error);
-    res.status(400).json({ error: 'Failed to delete vote page' });
+    console.error('Ошибка при удалении страницы голосования:', error);
+    res.status(400).json({ error: 'Не удалось удалить страницу голосования' });
   }
 });
 
-// Delete a comment
+// Удалить комментарий
 router.delete('/api/comments/:commentId/delete', async (req, res) => {
   const { commentId } = req.params;
 
@@ -69,23 +69,23 @@ router.delete('/api/comments/:commentId/delete', async (req, res) => {
     });
 
     if (!comment) {
-      return res.status(404).json({ error: 'Comment not found' });
+      return res.status(404).json({ error: 'Комментарий не найден' });
     }
 
     await prisma.comment.delete({
       where: { commentId },
     });
 
-    res.status(200).json({ message: 'Comment deleted successfully' });
+    res.status(200).json({ message: 'Комментарий успешно удален' });
   } catch (error) {
-    console.error('Error deleting comment:', error);
-    res.status(400).json({ error: 'Failed to delete comment' });
+    console.error('Ошибка при удалении комментария:', error);
+    res.status(400).json({ error: 'Не удалось удалить комментарий' });
   }
 });
 
-// Delete a vote
+// Удалить голос
 router.delete('/api/votes/:voteId/delete', async (req, res) => {
-  const { voteId } = req.params;
+  const { voteId } = req.params; // Получить voteId из параметров URL
 
   try {
     const vote = await prisma.vote.findUnique({
@@ -93,17 +93,17 @@ router.delete('/api/votes/:voteId/delete', async (req, res) => {
     });
 
     if (!vote) {
-      return res.status(404).json({ error: 'Vote not found' });
+      return res.status(404).json({ error: 'Голос не найден' });
     }
 
     await prisma.vote.delete({
       where: { id: voteId },
     });
 
-    res.status(200).json({ message: 'Vote deleted successfully' });
+    res.status(200).json({ message: 'Голос успешно удален' });
   } catch (error) {
-    console.error('Error deleting vote:', error);
-    res.status(400).json({ error: 'Failed to delete vote' });
+    console.error('Ошибка при удалении голоса:', error);
+    res.status(500).json({ error: 'Не удалось удалить голос' });
   }
 });
 

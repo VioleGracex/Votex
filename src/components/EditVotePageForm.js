@@ -1,17 +1,39 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import debounce from 'lodash.debounce';
-import shortid from 'shortid';
-import { FaTimes, FaPlusCircle } from 'react-icons/fa';
+import { FaTimes } from 'react-icons/fa';
+import { fetchUsername } from '../utils/fetchUsername';
 
 const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-const CreateVotePageForm = ({ onClose, onCreate }) => {
-  const [name, setName] = useState('');
+const EditVotePageForm = ({ votePage, onClose, onUpdate }) => {
+  const [name, setName] = useState(votePage.name);
   const [userSuggestions, setUserSuggestions] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [creatorUsername, setCreatorUsername] = useState('');
   const storedUserId = localStorage.getItem("userId");
   const formRef = useRef(null); // Reference to the form container
+
+  useEffect(() => {
+    const fetchUsernames = async () => {
+      const promises = votePage.users.map(userId => fetchUsername(userId));
+      const usernames = await Promise.all(promises);
+      const usersWithNames = votePage.users.map((userId, index) => ({
+        userId,
+        username: usernames[index],
+      })).filter(user => user.userId !== votePage.createdBy);
+
+      setSelectedUsers(usersWithNames);
+    };
+
+    const fetchCreatorUsername = async () => {
+      const username = await fetchUsername(votePage.createdBy);
+      setCreatorUsername(username);
+    };
+
+    fetchCreatorUsername();
+    fetchUsernames();
+  }, [votePage.createdBy, votePage.users]);
 
   const fetchUserSuggestions = async (query) => {
     if (query.length < 2) {
@@ -24,14 +46,20 @@ const CreateVotePageForm = ({ onClose, onCreate }) => {
         params: { query },
         headers: { 'user-id': storedUserId }
       });
-      setUserSuggestions(response.data);
+
+      // Filter out already selected users and the creator
+      const suggestions = response.data.filter(user => 
+        user.userId !== votePage.createdBy && 
+        !selectedUsers.some(selectedUser => selectedUser.userId === user.userId)
+      );
+      setUserSuggestions(suggestions);
     } catch (error) {
       console.error('Ошибка при получении предложений пользователей:', error);
     }
   };
 
   // Debounce the fetchUserSuggestions function to avoid rapid requests
-  const debouncedFetchUserSuggestions = useCallback(debounce(fetchUserSuggestions, 300), []);
+  const debouncedFetchUserSuggestions = useCallback(debounce(fetchUserSuggestions, 300), [selectedUsers]);
 
   const handleUserSearch = (query) => {
     debouncedFetchUserSuggestions(query);
@@ -39,7 +67,7 @@ const CreateVotePageForm = ({ onClose, onCreate }) => {
 
   const handleUserSelect = (user) => {
     if (!selectedUsers.some(u => u.userId === user.userId)) {
-      setSelectedUsers([...selectedUsers, user]);
+      setSelectedUsers([...selectedUsers, { userId: user.userId, username: user.username }]);
       setUserSuggestions([]);
     }
   };
@@ -58,30 +86,24 @@ const CreateVotePageForm = ({ onClose, onCreate }) => {
     }
 
     try {
-      // Generate a unique votePageId with shortid
-      const votePageId = shortid.generate();
       const userIds = [storedUserId, ...selectedUsers.map(user => user.userId)];
+      const updatedVotePage = {
+        votePageId: votePage.votePageId,
+        name,
+        users: userIds,
+      };
 
-      // Создаем или обновляем страницу голосования
-      const response = await axios.post(
-        `${apiUrl}/api/votepages/${storedUserId}/add`,
-        {
-          votePageId,
-          name,
-          users: userIds, // Отправляем ID пользователей в виде строк
-        },
-        {
-          headers: {
-            'user-id': storedUserId, // Убедитесь, что userId отправляется в заголовках запроса
-            'Authorization': `Bearer ${token}`
-          }
+      await axios.post(`${apiUrl}/api/votepages/${storedUserId}/add`, updatedVotePage, {
+        headers: {
+          'user-id': storedUserId,
+          'Authorization': `Bearer ${token}`
         }
-      );
-      onCreate(response.data);
+      });
+      onUpdate(updatedVotePage); // Pass the updated vote page to the parent component
       onClose();
     } catch (error) {
-      console.error('Ошибка при создании или обновлении страницы голосования:', error);
-      alert('Ошибка при создании или обновлении страницы голосования. Пожалуйста, попробуйте снова.');
+      console.error('Ошибка при обновлении страницы голосования:', error);
+      alert('Ошибка при обновлении страницы голосования. Пожалуйста, попробуйте снова.');
     }
   };
 
@@ -100,9 +122,9 @@ const CreateVotePageForm = ({ onClose, onCreate }) => {
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50 p-4">
+    <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50">
       <div ref={formRef} className="bg-white p-6 rounded-lg relative z-50 w-full max-w-3xl md:max-w-2xl sm:max-w-lg">
-        <button onClick={onClose} className="absolute top-4 right-4 text-black text-2xl">
+        <button onClick={onClose} className="absolute top-2 right-2 text-black">
           <FaTimes />
         </button>
         <form onSubmit={handleSubmit}>
@@ -158,7 +180,7 @@ const CreateVotePageForm = ({ onClose, onCreate }) => {
             </div>
           )}
           <button type="submit" className="w-full p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-            Создать страницу голосования
+            Обновить страницу голосования
           </button>
         </form>
       </div>
@@ -166,4 +188,4 @@ const CreateVotePageForm = ({ onClose, onCreate }) => {
   );
 };
 
-export default CreateVotePageForm;
+export default EditVotePageForm;

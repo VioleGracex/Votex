@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from "react";
 import { useRouter } from 'next/router';
 import axios from 'axios';
-import { FaHome, FaPlusCircle, FaFilter } from 'react-icons/fa';
+import { FaPlusCircle, FaFilter, FaUser, FaArrowLeft } from 'react-icons/fa';
 import UserFloatingPanel from '../../components/UserFloatingPanel';
 import PostForm from '../../components/PostForm';
 import Post from '../../components/Post';
@@ -45,6 +45,10 @@ const VotePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
   useEffect(() => {
     const checkPermission = async () => {
       const loggedIn = await checkIfLoggedInKick();
@@ -62,9 +66,16 @@ const VotePage = () => {
       try {
         const data = await fetchVotePageData(votePageId);
         setVotePage(data || {});
-        setPosts(data.posts || []);
         setUsers(data.users || []);
         setCreatorUsername(await fetchUsername(data.author.userId));
+
+        const postsWithUsernames = await Promise.all(
+          (data.posts || []).map(async (post) => {
+            const username = await fetchUsername(post.createdBy);
+            return { ...post, creatorUsername: username };
+          })
+        );
+        setPosts(postsWithUsernames);
 
         if (!data.users.includes(storedUserId)) {
           alert('У вас нет доступа к этой странице. Свяжитесь с владельцем, чтобы получить доступ.');
@@ -98,10 +109,12 @@ const VotePage = () => {
         votePageId,
         category: postCategory,
       });
+      const username = await fetchUsername(storedUserId);
+      const newPost = { ...response.data, creatorUsername: username };
       if (postId) {
-        setPosts(posts.map(post => (post.postId === postId ? response.data : post)));
+        setPosts(posts.map(post => (post.postId === postId ? newPost : post)));
       } else {
-        setPosts([...posts, response.data]);
+        setPosts([...posts, newPost]);
       }
       setPostTitle('');
       setPostContent('');
@@ -174,6 +187,24 @@ const VotePage = () => {
       return 0;
     });
 
+  // Pagination calculations
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentPosts = filteredPosts.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredPosts.length / itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center h-screen">Загрузка...</div>;
   }
@@ -186,18 +217,18 @@ const VotePage = () => {
     <div className="min-h-screen bg-gray-100">
       {/* Заголовок */}
       <div className="relative bg-blue-600 h-64 flex flex-col items-center justify-center">
-        <h1 className="text-4xl font-bold text-white">{votePage.name}</h1>
-        <p className="text-sm text-white mt-2">Создано: {creatorUsername}</p>
         <button
-          className="absolute top-4 right-4 bg-white text-blue-600 px-4 py-2 rounded shadow hover:bg-gray-200 flex items-center"
+          className="absolute top-4 left-4 bg-white text-blue-600 px-4 py-2 rounded shadow hover:bg-gray-200 flex items-center"
           onClick={() => router.push('/dashboard')}
         >
-          <FaHome className="mr-2" /> Вернуться на панель управления
+          <FaArrowLeft className="mr-2" /> <span className="hidden md:inline">Вернуться на панель управления</span>
         </button>
+        <h1 className="text-4xl font-bold text-white">{votePage.name}</h1>
+        <p className="text-sm text-white mt-2">Создано: {creatorUsername}</p>
       </div>
 
       {/* Основное содержание */}
-      <div className="container mx-auto p-4">
+      <div className="container mx-auto px-4 py-8 max-w-screen-xl">
         {/* Search and Filter Container */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex space-x-4">
@@ -205,7 +236,7 @@ const VotePage = () => {
               className="bg-white text-blue-600 p-2 rounded shadow hover:bg-gray-200 flex items-center"
               onClick={() => setShowFilter(!showFilter)}
             >
-              <FaFilter className="mr-2" /> Фильтр
+              <FaFilter className="mr-2" /> <span className="hidden md:inline">Фильтр</span>
             </button>
             <input
               type="text"
@@ -216,10 +247,10 @@ const VotePage = () => {
             />
           </div>
           <button
-            className="bg-blue-600 text-white p-2 rounded shadow hover:bg-blue-700 flex items-center"
+            className="bg-blue-600 text-white p-2 rounded-full shadow hover:bg-blue-700 flex items-center justify-center w-10 h-10 md:w-auto md:h-auto"
             onClick={() => openModal()}
           >
-            <FaPlusCircle className="mr-2" /> Добавить сообщение
+            <FaPlusCircle className="md:mr-2" /> <span className="hidden md:inline">Добавить предложение</span>
           </button>
         </div>
 
@@ -234,9 +265,9 @@ const VotePage = () => {
         <UserFloatingPanel users={users} showUserMenu={showUserMenu} setShowUserMenu={setShowUserMenu} />
 
         {/* Список сообщений */}
-        <div className="grid gap-6">
-          {filteredPosts.length > 0 ? (
-            filteredPosts.map((post) => (
+        <div className="grid gap-6 max-w-3xl mx-auto">
+          {currentPosts.length > 0 ? (
+            currentPosts.map((post) => (
               <Post
                 key={post.postId}
                 post={post}
@@ -248,6 +279,29 @@ const VotePage = () => {
             <div className="bg-white shadow-md rounded-lg p-4">
               <p className="text-gray-800">Сообщений нет</p>
             </div>
+          )}
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="flex justify-center items-center mt-4 space-x-4">
+          {currentPage > 1 && (
+            <button
+              className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition"
+              onClick={handlePreviousPage}
+            >
+              <FaArrowLeft size={20} />
+            </button>
+          )}
+          <span className="text-gray-700">
+            Страница {currentPage} из {totalPages}
+          </span>
+          {currentPage < totalPages && (
+            <button
+              className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition"
+              onClick={handleNextPage}
+            >
+              <FaArrowRight size={20} />
+            </button>
           )}
         </div>
       </div>

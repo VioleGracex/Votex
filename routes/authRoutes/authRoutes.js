@@ -8,15 +8,15 @@ const SECRET_KEY = process.env.SECRET_KEY || 'your_secret_key';
 
 const router = express.Router();
 
-// Helper function to encode userId IMPORTANT(Critical) do not change
+// Вспомогательная функция для кодирования userId ВАЖНО (Критично) не изменять
 const encodeUserId = (username) => {
   return crypto.createHash('sha256').update(username).digest('hex');
 };
 
-// Register Endpoint
+// Endpoint для регистрации
 router.post('/api/register', async (req, res) => {
   const { username, email, password } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10); // Hashing the password
+  const hashedPassword = await bcrypt.hash(password, 10); // Хэширование пароля
   const encodedUserId = encodeUserId(username);
 
   try {
@@ -29,11 +29,11 @@ router.post('/api/register', async (req, res) => {
     });
 
     if (existingUser) {
-      return res.status(400).json({ error: 'Username already exists' });
+      return res.status(400).json({ error: 'Имя пользователя уже существует' });
     }
 
     if (existingEmail) {
-      return res.status(400).json({ error: 'Email already exists' });
+      return res.status(400).json({ error: 'Email уже существует' });
     }
 
     const user = await prisma.user.create({
@@ -50,7 +50,7 @@ router.post('/api/register', async (req, res) => {
     const votePage = await prisma.votePage.create({
       data: {
         votePageId: uniqueVotePageId,
-        name: 'Tutorial',
+        name: 'Учебник',
         createdBy: encodedUserId,
         userId: encodedUserId,
         users: [encodedUserId],
@@ -59,22 +59,23 @@ router.post('/api/register', async (req, res) => {
 
     res.status(201).json({ user, votePage });
   } catch (error) {
-    console.error('Error creating user or vote page:', error);
-    res.status(400).json({ error: 'Failed to create user or default resources' });
+    console.error('Ошибка при создании пользователя или страницы голосования:', error);
+    res.status(400).json({ error: 'Не удалось создать пользователя или стандартные ресурсы' });
   }
 });
 
-// Login Endpoint
+// Endpoint для входа
 router.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   const user = await prisma.user.findUnique({
     where: { email },
   });
+
   if (user && (await bcrypt.compare(password, user.password))) {
     const token = jwt.sign({ userId: user.userId }, SECRET_KEY, { expiresIn: '1h' });
     res.json({ token, user });
   } else {
-    res.status(401).json({ error: 'Invalid email or password' });
+    res.status(401).json({ error: 'Неверный email или пароль' });
   }
 });
 
