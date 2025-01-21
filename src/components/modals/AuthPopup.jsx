@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaTimes, FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
 
-const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';  // Резервный URL
+const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';  // Fallback URL
 
 const AuthPopup = ({ type, onClose }) => {
   const [view, setView] = useState(type);
@@ -11,101 +11,96 @@ const AuthPopup = ({ type, onClose }) => {
   const modalRef = useRef(null);
 
   useEffect(() => {
-    if (typeof document !== 'undefined') {
-      const closeOnEscapeKey = (e) => e.key === 'Escape' ? onClose() : null;
-      const handleClickOutside = (e) => {
-        if (modalRef.current && !modalRef.current.contains(e.target)) {
-          onClose();
-        }
-      };
+    const closeOnEscapeKey = (e) => e.key === 'Escape' ? onClose() : null;
+    const handleClickOutside = (e) => {
+      if (modalRef.current && !modalRef.current.contains(e.target)) {
+        onClose();
+      }
+    };
 
-      document.body.addEventListener('keydown', closeOnEscapeKey);
-      document.addEventListener('mousedown', handleClickOutside);
+    document.body.addEventListener('keydown', closeOnEscapeKey);
+    document.addEventListener('mousedown', handleClickOutside);
 
-      return () => {
-        document.body.removeEventListener('keydown', closeOnEscapeKey);
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
+    return () => {
+      document.body.removeEventListener('keydown', closeOnEscapeKey);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [onClose]);
 
   const register = async () => {
-    console.log('Регистрация с', { username, email, password });
-    console.log(apiUrl); // Проверьте, выводит ли это правильный URL
+    console.log('Registering with', { username, email, password });
 
     try {
       const response = await fetch(`${apiUrl}/api/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password })
+        body: JSON.stringify({ username, email, password }),
       });
 
       const result = await response.json();
-      console.log('Ответ на регистрацию:', result);
+      console.log('Registration response:', result);
 
       if (response.ok) {
-        alert('Регистрация прошла успешно!');
-        // Сохранить токен, userId и username в localStorage
+        alert('Registration successful!');
         localStorage.setItem('token', result.token);
         localStorage.setItem('username', result.user.username);
-        localStorage.setItem('userId', result.user.userId); // Сохранить userId
+        localStorage.setItem('userId', result.user.userId);
         setView('login');
       } else {
         alert(result.error);
       }
     } catch (error) {
-      console.error('Ошибка регистрации:', error);
-      alert('Ошибка регистрации. Пожалуйста, попробуйте еще раз.');
+      console.error('Registration error:', error);
+      alert('Registration error. Please try again.');
     }
   };
 
   const login = async () => {
-    console.log('Вход с', { email, password });
+    console.log('Logging in with', { email, password });
+
     try {
       const response = await fetch(`${apiUrl}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
       });
 
       const result = await response.json();
-      console.log('Ответ на вход:', result);
+      console.log('Login response:', result);
 
       if (response.ok) {
-        alert('Вход прошел успешно!');
-        // Сохранить токен, userId и username в localStorage
+        alert('Login successful!');
         localStorage.setItem('token', result.token);
         localStorage.setItem('username', result.user.username);
-        localStorage.setItem('userId', result.user.userId); // Сохранить userId
+        localStorage.setItem('userId', result.user.userId);
         onClose();
-        // Перенаправить на панель управления пользователя
-        window.location.href = `/dashboard`;
+        window.location.href = '/dashboard';
       } else {
         alert(result.error);
       }
     } catch (error) {
-      console.error('Ошибка входа:', error);
-      alert('Ошибка входа. Пожалуйста, попробуйте еще раз.');
+      console.error('Login error:', error);
+      alert('Login error. Please try again.');
     }
   };
 
   const sendResetLink = async () => {
     try {
-      const response = await fetch(`${apiUrl}/send-reset-link`, {
+      const response = await fetch(`${apiUrl}/api/send-reset-link`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email }),
       });
 
       const result = await response.json();
       if (response.ok) {
-        alert('Ссылка для сброса пароля отправлена на ваш email!');
+        alert('Password reset link sent to your email!');
       } else {
         alert(result.error);
       }
     } catch (error) {
-      console.error('Ошибка отправки ссылки для сброса пароля:', error);
-      alert('Ошибка отправки ссылки для сброса пароля. Пожалуйста, попробуйте еще раз.');
+      console.error('Password reset link error:', error);
+      alert('Password reset link error. Please try again.');
     }
   };
 
@@ -118,9 +113,9 @@ const AuthPopup = ({ type, onClose }) => {
         <div className="p-4">
           {view === 'register' && (
             <>
-              <h2 className="text-center text-2xl mb-4">Регистрация</h2>
+              <h2 className="text-center text-2xl mb-4">Register</h2>
               <div className="form-group mb-4">
-                <label htmlFor="username" className="block mb-2">Имя пользователя</label>
+                <label htmlFor="username" className="block mb-2">Username</label>
                 <div className="flex items-center border border-gray-300 rounded-lg">
                   <FaUser className="ml-2 text-gray-500" />
                   <input
@@ -148,7 +143,7 @@ const AuthPopup = ({ type, onClose }) => {
                 </div>
               </div>
               <div className="form-group mb-4">
-                <label htmlFor="password" className="block mb-2">Пароль</label>
+                <label htmlFor="password" className="block mb-2">Password</label>
                 <div className="flex items-center border border-gray-300 rounded-lg">
                   <FaLock className="ml-2 text-gray-500" />
                   <input
@@ -166,17 +161,17 @@ const AuthPopup = ({ type, onClose }) => {
                   onClick={register}
                   className="w-full p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                 >
-                  Зарегистрироваться
+                  Register
                 </button>
               </div>
               <div className="text-center">
-                <button onClick={() => setView('login')} className="text-blue-500 hover:underline">Уже есть аккаунт? Войти</button>
+                <button onClick={() => setView('login')} className="text-blue-500 hover:underline">Already have an account? Login</button>
               </div>
             </>
           )}
           {view === 'login' && (
             <>
-              <h2 className="text-center text-2xl mb-4">Вход</h2>
+              <h2 className="text-center text-2xl mb-4">Login</h2>
               <div className="form-group mb-4">
                 <label htmlFor="loginEmail" className="block mb-2">Email</label>
                 <div className="flex items-center border border-gray-300 rounded-lg">
@@ -192,7 +187,7 @@ const AuthPopup = ({ type, onClose }) => {
                 </div>
               </div>
               <div className="form-group mb-4">
-                <label htmlFor="loginPassword" className="block mb-2">Пароль</label>
+                <label htmlFor="loginPassword" className="block mb-2">Password</label>
                 <div className="flex items-center border border-gray-300 rounded-lg">
                   <FaLock className="ml-2 text-gray-500" />
                   <input
@@ -210,18 +205,18 @@ const AuthPopup = ({ type, onClose }) => {
                   onClick={login}
                   className="w-full p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                 >
-                  Войти
+                  Login
                 </button>
               </div>
               <div className="text-center">
-                <button onClick={() => setView('register')} className="text-blue-500 hover:underline">Нет аккаунта? Регистрация</button>
-                <button onClick={() => setView('forgotPassword')} className="text-blue-500 hover:underline ml-4">Забыли пароль?</button>
+                <button onClick={() => setView('register')} className="text-blue-500 hover:underline">Don't have an account? Register</button>
+                <button onClick={() => setView('forgotPassword')} className="text-blue-500 hover:underline ml-4">Forgot password?</button>
               </div>
             </>
           )}
           {view === 'forgotPassword' && (
             <>
-              <h2 className="text-center text-2xl mb-4">Сброс пароля</h2>
+              <h2 className="text-center text-2xl mb-4">Reset Password</h2>
               <div className="form-group mb-4">
                 <label htmlFor="resetEmail" className="block mb-2">Email</label>
                 <div className="flex items-center border border-gray-300 rounded-lg">
@@ -241,11 +236,11 @@ const AuthPopup = ({ type, onClose }) => {
                   onClick={sendResetLink}
                   className="w-full p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                 >
-                  Отправить ссылку для сброса
+                  Send Reset Link
                 </button>
               </div>
               <div className="text-center">
-                <button onClick={() => setView('login')} className="text-blue-500 hover:underline">Вернуться к входу</button>
+                <button onClick={() => setView('login')} className="text-blue-500 hover:underline">Back to Login</button>
               </div>
             </>
           )}

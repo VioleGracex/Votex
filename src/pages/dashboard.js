@@ -26,6 +26,33 @@ const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
+  const calculateUniqueUsers = (votePages) => {
+    const uniqueUsers = new Set();
+    votePages.forEach((vp) => {
+      if (vp && vp.users) {
+        vp.users.forEach((user) => uniqueUsers.add(user.userId));
+      }
+    });
+    return uniqueUsers.size;
+  };
+
+  const fetchVotePages = async () => {
+    if (!userId) return;
+
+    try {
+      setLoading(true);
+      const votePagesResponse = await axios.get(
+        `${apiUrl}/api/votepages/${userId}`
+      );
+      setVotePages(votePagesResponse.data);
+      setLoading(false);
+    } catch (error) {
+      console.error("Ошибка при получении данных:", error);
+      alert("Ошибка при получении данных. Пожалуйста, попробуйте снова.");
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const checkLoginStatus = async () => {
       const loggedIn = await checkIfLoggedInKick();
@@ -43,32 +70,21 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (!userId) return;
-
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const votePagesResponse = await axios.get(
-          `${apiUrl}/api/votepages/${userId}`
-        );
-        setVotePages(votePagesResponse.data);
-        setLoading(false);
-      } catch (error) {
-        console.error("Ошибка при получении данных:", error);
-        alert("Ошибка при получении данных. Пожалуйста, попробуйте снова.");
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    fetchVotePages();
   }, [userId]);
 
-  const handleCreateVotePage = (votePage) => {
-    setVotePages([...votePages, votePage]);
+  const handleCreateVotePage = async (votePage) => {
+    try {
+      await axios.post(`${apiUrl}/api/votepages/${userId}/add`, votePage);
+      fetchVotePages(); // Refetch the vote pages after creating a new one
+    } catch (error) {
+      console.error("Ошибка при создании страницы голосования:", error);
+      alert("Ошибка при создании страницы голосования. Пожалуйста, попробуйте снова.");
+    }
   };
 
-  const handleEditVotePage = (votePageId) => {
-    alert(`Редактировать страницу голосования: ${votePageId}`);
+  const handleEditVotePage = (votePageId, name) => {
+    handleCreateVotePage({ votePageId, name });
   };
 
   const handleDeleteVotePage = async (votePageId) => {
@@ -78,8 +94,8 @@ const Dashboard = () => {
     if (!confirmed) return;
 
     try {
-      await axios.delete(`${apiUrl}/api/votepages/${votePageId}`);
-      setVotePages(votePages.filter((vp) => vp.votePageId !== votePageId));
+      await axios.delete(`${apiUrl}/api/votepages/${userId}/${votePageId}/delete`);
+      fetchVotePages(); // Refetch the vote pages after deleting one
     } catch (error) {
       console.error("Ошибка при удалении страницы голосования:", error);
       alert(
@@ -88,12 +104,17 @@ const Dashboard = () => {
     }
   };
 
-  // Calculate paginated data
+  // Filter vote pages based on search query
+  const filteredVotePages = votePages.filter((votePage) =>
+    votePage.name.toLowerCase().includes(searchQuery)
+  );
+
+  // Calculate paginated data based on filtered vote pages
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentVotePages = votePages.slice(indexOfFirstItem, indexOfLastItem);
+  const currentVotePages = filteredVotePages.slice(indexOfFirstItem, indexOfLastItem);
 
-  const totalPages = Math.ceil(votePages.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredVotePages.length / itemsPerPage);
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
@@ -108,10 +129,7 @@ const Dashboard = () => {
   };
 
   // Calculate unique users
-  const uniqueUsers = new Set();
-  votePages.forEach((vp) => {
-    vp.users.forEach((user) => uniqueUsers.add(user.userId));
-  });
+  const uniqueUsersCount = calculateUniqueUsers(votePages);
 
   if (loading) {
     return (
@@ -173,7 +191,7 @@ const Dashboard = () => {
             </div>
             <div className="bg-red-100 text-red-800 p-4 rounded-lg shadow">
               <h3 className="text-lg font-semibold">Пользователи</h3>
-              <p className="text-2xl">{uniqueUsers.size}</p>
+              <p className="text-2xl">{uniqueUsersCount}</p>
             </div>
           </div>
         </section>
@@ -184,7 +202,10 @@ const Dashboard = () => {
             type="text"
             placeholder="Поиск страниц голосования..."
             className="w-full p-4 border border-gray-300 rounded-lg"
-            onChange={(e) => setSearchQuery(e.target.value.toLowerCase())}
+            onChange={(e) => {
+              setSearchQuery(e.target.value.toLowerCase());
+              setCurrentPage(1); // Reset to first page on search
+            }}
           />
         </section>
 
@@ -204,18 +225,15 @@ const Dashboard = () => {
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {currentVotePages
-              .filter((votePage) =>
-                votePage.name.toLowerCase().includes(searchQuery)
-              )
-              .map((votePage) => (
-                <VotePageCard
-                  key={votePage.votePageId}
-                  votePage={votePage}
-                  onEdit={() => handleEditVotePage(votePage.votePageId)}
-                  onDelete={() => handleDeleteVotePage(votePage.votePageId)}
-                />
-              ))}
+            {currentVotePages.map((votePage, index) => (
+              <VotePageCard
+                key={votePage.votePageId}
+                votePage={votePage}
+                onEdit={() => handleEditVotePage(votePage.votePageId, votePage.name)}
+                onDelete={() => handleDeleteVotePage(votePage.votePageId)}
+                zIndex={currentVotePages.length - index}
+              />
+            ))}
           </div>
         </section>
 

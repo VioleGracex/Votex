@@ -1,30 +1,75 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaThumbsUp, FaThumbsDown, FaEdit, FaTrash, FaEllipsisV } from 'react-icons/fa';
+import axios from 'axios';
+import { FaArrowUp, FaArrowDown, FaEdit, FaTrash, FaEllipsisV } from 'react-icons/fa';
+import { fetchUsername } from '../utils/fetchUsername'; // Import the fetchUsername function
 
-const Post = ({ post, onEdit, onDelete, onUpvote, onDownvote }) => {
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+const Post = ({ post, onEdit, onDelete }) => {
   const [menuVisible, setMenuVisible] = useState(false);
+  const [username, setUsername] = useState('');
+  const [userVote, setUserVote] = useState(null);
+  const [votes, setVotes] = useState([]);
   const menuRef = useRef(null);
 
-  const handleUpvote = () => {
-    onUpvote(post.postId);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const username = await fetchUsername(post.createdBy);
+        setUsername(username);
+      } catch (error) {
+        // Handle error if needed
+      }
+    };
+
+    fetchData();
+    fetchVotes();
+  }, [post.createdBy, post.postId]);
+
+  const fetchVotes = async () => {
+    try {
+      const response = await axios.get(`${apiUrl}/api/votes/${post.postId}`);
+      setVotes(response.data);
+      
+      // Check if the current user has already voted and set the userVote state
+      const storedUserId = localStorage.getItem("userId");
+      const existingUserVote = response.data.find(vote => vote.userId === storedUserId);
+      if (existingUserVote) {
+        setUserVote(existingUserVote.voteType);
+      }
+    } catch (error) {
+      console.error('Ошибка при получении голосов:', error);
+    }
   };
 
-  const handleDownvote = () => {
-    onDownvote(post.postId);
+  const castVote = async (voteType) => {
+    const storedUserId = localStorage.getItem("userId");
+    try {
+      const response = await axios.post(`${apiUrl}/api/votes/cast`, {
+        postId: post.postId,
+        userId: storedUserId,
+        votePageId: post.votePageId,
+        voteType,
+      });
+      setUserVote(voteType);
+      fetchVotes(); // Update votes after casting vote
+    } catch (error) {
+      console.error(`Ошибка при ${voteType === 1 ? 'голосовании за' : 'голосовании против'} поста:`, error);
+    }
   };
 
   const toggleMenu = (e) => {
-    e.stopPropagation(); // Prevent triggering any parent click handlers
+    e.stopPropagation();
     setMenuVisible(prev => !prev);
   };
 
   const handleEdit = (e) => {
-    e.stopPropagation(); // Prevent triggering any parent click handlers
+    e.stopPropagation();
     onEdit(post.postId);
   };
 
   const handleDelete = (e) => {
-    e.stopPropagation(); // Prevent triggering any parent click handlers
+    e.stopPropagation();
     onDelete(post.postId);
   };
 
@@ -53,7 +98,7 @@ const Post = ({ post, onEdit, onDelete, onUpvote, onDownvote }) => {
           <button
             onClick={toggleMenu}
             className="text-gray-600 hover:text-gray-800"
-            aria-label="Toggle menu"
+            aria-label="Переключить меню"
           >
             <FaEllipsisV size={20} />
           </button>
@@ -78,35 +123,29 @@ const Post = ({ post, onEdit, onDelete, onUpvote, onDownvote }) => {
       <p className="text-gray-800 mt-2">{post.description}</p>
       <div className="flex justify-between items-center mt-4">
         <div className="flex items-center space-x-4">
-          <div className="relative group">
+          <div className="relative group flex items-center">
             <button
-              onClick={handleUpvote}
-              className="text-green-600 hover:text-green-800"
-              aria-label="Upvote"
+              onClick={() => castVote(1)}
+              className={`flex items-center px-3 py-1 rounded-l-full ${userVote === 1 ? 'bg-green-800 text-white' : 'bg-green-600 text-white hover:bg-green-800'}`}
+              aria-label="Голосовать за"
+              disabled={userVote === 1}
             >
-              <FaThumbsUp size={20} />
+              <FaArrowUp size={20} />
+              <span className="ml-2">{votes.filter(vote => vote.voteType === 1).length}</span>
             </button>
-            <span className="absolute bottom-full mb-2 bg-gray-700 text-white text-xs rounded-lg p-1 hidden group-hover:block">
-              Upvote
-            </span>
-            <span className="ml-2">{post.upvotes}</span>
-          </div>
-          <div className="relative group">
             <button
-              onClick={handleDownvote}
-              className="text-red-600 hover:text-red-800"
-              aria-label="Downvote"
+              onClick={() => castVote(0)}
+              className={`flex items-center px-3 py-1 rounded-r-full ${userVote === 0 ? 'bg-red-800 text-white' : 'bg-red-600 text-white hover:bg-red-800'}`}
+              aria-label="Голосовать против"
+              disabled={userVote === 0}
             >
-              <FaThumbsDown size={20} />
+              <FaArrowDown size={20} />
+              <span className="ml-2">{votes.filter(vote => vote.voteType === 0).length}</span>
             </button>
-            <span className="absolute bottom-full mb-2 bg-gray-700 text-white text-xs rounded-lg p-1 hidden group-hover:block">
-              Downvote
-            </span>
-            <span className="ml-2">{post.downvotes}</span>
           </div>
         </div>
         <div className="text-sm text-gray-500">
-          {new Date(post.createdAt).toLocaleDateString()} | {post.createdBy}
+          {new Date(post.createdAt).toLocaleDateString()} | {username}
         </div>
       </div>
     </div>

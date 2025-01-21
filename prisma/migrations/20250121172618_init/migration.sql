@@ -51,17 +51,11 @@ CREATE TABLE "Comment" (
 CREATE TABLE "VotePage" (
     "votePageId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "createdBy" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
+    "users" TEXT[],
 
     CONSTRAINT "VotePage_pkey" PRIMARY KEY ("votePageId")
-);
-
--- CreateTable
-CREATE TABLE "UserVotePage" (
-    "userId" TEXT NOT NULL,
-    "votePageId" TEXT NOT NULL,
-
-    CONSTRAINT "UserVotePage_pkey" PRIMARY KEY ("userId","votePageId")
 );
 
 -- CreateIndex
@@ -92,25 +86,22 @@ CREATE UNIQUE INDEX "Comment_commentId_key" ON "Comment"("commentId");
 CREATE UNIQUE INDEX "VotePage_votePageId_key" ON "VotePage"("votePageId");
 
 -- AddForeignKey
-ALTER TABLE "Post" ADD CONSTRAINT "Post_votePageId_fkey" FOREIGN KEY ("votePageId") REFERENCES "VotePage"("votePageId") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Post" ADD CONSTRAINT "Post_votePageId_fkey" FOREIGN KEY ("votePageId") REFERENCES "VotePage"("votePageId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Post" ADD CONSTRAINT "Post_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "User"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Post" ADD CONSTRAINT "Post_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "User"("userId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Vote" ADD CONSTRAINT "Vote_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("postId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Vote" ADD CONSTRAINT "Vote_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("postId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Vote" ADD CONSTRAINT "Vote_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Vote" ADD CONSTRAINT "Vote_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("userId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Vote" ADD CONSTRAINT "Vote_votePageId_fkey" FOREIGN KEY ("votePageId") REFERENCES "VotePage"("votePageId") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Vote" ADD CONSTRAINT "Vote_votePageId_fkey" FOREIGN KEY ("votePageId") REFERENCES "VotePage"("votePageId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Comment" ADD CONSTRAINT "Comment_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "User"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Comment" ADD CONSTRAINT "Comment_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "User"("userId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "UserVotePage" ADD CONSTRAINT "UserVotePage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "UserVotePage" ADD CONSTRAINT "UserVotePage_votePageId_fkey" FOREIGN KEY ("votePageId") REFERENCES "VotePage"("votePageId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "VotePage" ADD CONSTRAINT "VotePage_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "User"("userId") ON DELETE CASCADE ON UPDATE CASCADE;

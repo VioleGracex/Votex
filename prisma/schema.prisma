@@ -18,7 +18,7 @@ model User {
   posts     Post[]         @relation("UserPosts")
   comments  Comment[]      @relation("UserComments")
   votes     Vote[]         @relation("UserVotes")
-  votePages UserVotePage[] @relation("UserUserVotePages")
+  votePages VotePage[]     @relation("userVotePage")
 }
 
 model Post {
@@ -31,9 +31,9 @@ model Post {
   updatedAt   DateTime  @default(now()) @updatedAt
   category    String?
   votes       Vote[]    @relation("PostVotes")
-  votePage    VotePage? @relation(fields: [votePageId], references: [votePageId])
+  votePage    VotePage? @relation(fields: [votePageId], references: [votePageId], onUpdate: Cascade, onDelete: Cascade)
   votePageId  String?
-  user        User      @relation("UserPosts", fields: [createdBy], references: [userId])
+  author        User      @relation("UserPosts", fields: [createdBy], references: [userId], onUpdate: Cascade, onDelete: Cascade)
 }
 
 model Vote {
@@ -42,9 +42,9 @@ model Vote {
   userId     String
   votePageId String?
   voteType   Int // 0 for downvote, 1 for upvote
-  post       Post      @relation("PostVotes", fields: [postId], references: [postId])
-  user       User      @relation("UserVotes", fields: [userId], references: [userId])
-  votePage   VotePage? @relation(fields: [votePageId], references: [votePageId])
+  post       Post      @relation("PostVotes", fields: [postId], references: [postId], onUpdate: Cascade, onDelete: Cascade)
+  author       User?     @relation("UserVotes", fields: [userId], references: [userId], onUpdate: Cascade, onDelete: Cascade)
+  votePage   VotePage? @relation(fields: [votePageId], references: [votePageId], onUpdate: Cascade, onDelete: Cascade)
 
   @@index([postId])
   @@index([userId])
@@ -56,23 +56,17 @@ model Comment {
   createdBy String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-  user      User     @relation("UserComments", fields: [createdBy], references: [userId])
+  author      User?    @relation("UserComments", fields: [createdBy], references: [userId], onUpdate: Cascade, onDelete: Cascade)
 }
 
 model VotePage {
   votePageId String         @id @unique
   name       String
+  createdBy  String
   userId     String
-  users      UserVotePage[] @relation("VotePageUserVotePages")
+  users      String[]      
   posts      Post[]
   votes      Vote[]
+  author     User?          @relation("userVotePage", fields: [createdBy], references: [userId], onUpdate: Cascade, onDelete: Cascade)
 }
 
-model UserVotePage {
-  userId     String
-  votePageId String
-  user       User     @relation("UserUserVotePages", fields: [userId], references: [userId])
-  votePage   VotePage @relation("VotePageUserVotePages", fields: [votePageId], references: [votePageId])
-
-  @@id([userId, votePageId])
-}
