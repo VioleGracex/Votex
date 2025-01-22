@@ -115,6 +115,11 @@ Welcome to the Votex project! Follow the steps below to set up and run the proje
    ```sh
    node server.js
    ```
+# Build the Docker containers
+docker-compose build
+
+# Run the Docker containers
+docker-compose up
 
 #### Будущие обновления
 - Внедрение функциональности чата на странице голосования.
