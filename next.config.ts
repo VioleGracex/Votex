@@ -7,16 +7,6 @@ const nextConfig: NextConfig = {
   // Set custom build directory
   distDir: 'build',
 
-  // Enable Webpack 5
-
-  // Add custom webpack configuration
-
-  // i18n configuration for internationalized routing
-  i18n: {
-    locales: ['en', 'es', 'fr', 'ru'],
-    defaultLocale: 'ru',
-  },
-
   // Enable trailing slash for all routes
   trailingSlash: true,
 
@@ -44,8 +34,8 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: '/old-route',
-        destination: '/new-route',
+        source: '/',
+        destination: '/home',
         permanent: true,
       },
     ];

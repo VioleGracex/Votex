@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "../pages/home";
+
 
 
 export default function App() {
@@ -36,10 +36,6 @@ export default function App() {
   }
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-      </Routes>
-    </Router>
+    <p>heelo</p>
   );
 }
